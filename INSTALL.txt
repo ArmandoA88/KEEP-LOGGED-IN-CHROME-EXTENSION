@@ -1,0 +1,36 @@
+QUICK INSTALLATION GUIDE - Keep Logged In Chrome Extension
+===========================================================
+
+STEP 1: Open Chrome Extensions
+- Open Google Chrome
+- Type: chrome://extensions/ in the address bar
+- Press Enter
+
+STEP 2: Enable Developer Mode
+- Look for "Developer mode" toggle in the top-right corner
+- Click to turn it ON
+
+STEP 3: Load the Extension
+- Click "Load unpacked" button
+- Navigate to this folder (where these files are located)
+- Select this folder and click "Select Folder"
+
+STEP 4: Verify Installation
+- You should see "Keep Logged In" in your extensions list
+- The extension should be enabled by default
+
+STEP 5: Use the Extension
+- Click the extension icon in Chrome toolbar (or puzzle piece menu)
+- Toggle "Extension Active" to ON
+- Set your preferred refresh interval (default: 5 minutes)
+- Choose method: "Refresh Tabs" or "Ping Only"
+
+DONE! The extension will now keep your tabs active and prevent session timeouts.
+
+TROUBLESHOOTING:
+- If you don't see the extension icon, click the puzzle piece icon and pin it
+- Make sure all files are in the same folder
+- Check that Developer mode is enabled
+- Refresh the extensions page if needed
+
+For detailed instructions, see README.md
