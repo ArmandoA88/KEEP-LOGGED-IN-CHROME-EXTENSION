@@ -15,14 +15,20 @@ STEP 3: Load the Extension
 - Navigate to this folder (where these files are located)
 - Select this folder and click "Select Folder"
 
-STEP 4: Verify Installation
+STEP 4: Generate Icons (Optional)
+- Open create-icons.html in your web browser
+- Click "Download All Icons" button
+- Save the downloaded files as icon16.png, icon48.png, icon128.png in the extension folder
+- Go back to chrome://extensions/ and click the refresh button on the extension
+
+STEP 5: Verify Installation
 - You should see "Keep Logged In" in your extensions list
 - The extension should be enabled by default
 
-STEP 5: Use the Extension
+STEP 6: Use the Extension
 - Click the extension icon in Chrome toolbar (or puzzle piece menu)
 - Toggle "Extension Active" to ON
-- Set your preferred refresh interval (default: 5 minutes)
+- Set your preferred refresh interval (default: 4 minutes)
 - Choose method: "Refresh Tabs" or "Ping Only"
 
 DONE! The extension will now keep your tabs active and prevent session timeouts.
