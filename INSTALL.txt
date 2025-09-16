@@ -15,10 +15,13 @@ STEP 3: Load the Extension
 - Navigate to this folder (where these files are located)
 - Select this folder and click "Select Folder"
 
-STEP 4: Generate Icons (Optional)
+STEP 4: Generate Icons (Required for Dynamic Colors)
 - Open create-icons.html in your web browser
-- Click "Download All Icons" button
-- Save the downloaded files as icon16.png, icon48.png, icon128.png in the extension folder
+- Click "Download All Icons (9 files)" button
+- Save the downloaded files in the extension folder:
+  * icon16.png, icon48.png, icon128.png (default)
+  * icon16-active.png, icon48-active.png, icon128-active.png (green when ON)
+  * icon16-inactive.png, icon48-inactive.png, icon128-inactive.png (red when OFF)
 - Go back to chrome://extensions/ and click the refresh button on the extension
 
 STEP 5: Verify Installation

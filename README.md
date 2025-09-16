@@ -12,6 +12,7 @@ A Chrome extension that prevents session timeouts by keeping all your tabs activ
 - **Smart Tab Detection**: Only works on web pages, skips Chrome internal pages
 - **Session Warning Detection**: Automatically clicks "extend session" buttons
 - **User Activity Simulation**: Simulates mouse movements and scrolling
+- **Dynamic Icon Colors**: Extension icon changes color (Green=ON, Red=OFF)
 - **Easy Toggle**: Quick on/off switch via popup interface
 
 ## Installation

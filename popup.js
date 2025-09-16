@@ -51,6 +51,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     await saveSettings();
   });
   
+  // Test button event listener
+  const testButton = document.getElementById('testButton');
+  testButton.addEventListener('click', async () => {
+    testButton.disabled = true;
+    testButton.textContent = '🔄 Testing...';
+    testButton.style.background = '#FF9800';
+    
+    try {
+      // Send test message to background script
+      const response = await chrome.runtime.sendMessage({ action: 'testKeepAlive' });
+      
+      if (response.success) {
+        testButton.textContent = '✅ Test Completed!';
+        testButton.style.background = '#4CAF50';
+        
+        // Show results
+        setTimeout(() => {
+          alert(`Keep Alive Test Results:\n\n` +
+                `Method: ${response.method}\n` +
+                `Tabs processed: ${response.tabCount}\n` +
+                `Successful: ${response.successCount}\n` +
+                `Failed: ${response.errorCount}\n\n` +
+                `Check browser console and notifications for details.`);
+        }, 500);
+      } else {
+        throw new Error('Test failed');
+      }
+    } catch (error) {
+      testButton.textContent = '❌ Test Failed';
+      testButton.style.background = '#F44336';
+      console.error('Test error:', error);
+    }
+    
+    // Reset button after 3 seconds
+    setTimeout(() => {
+      testButton.disabled = false;
+      testButton.textContent = '🧪 Test Keep Alive Now';
+      testButton.style.background = '#2196F3';
+    }, 3000);
+  });
+  
   // Update toggle switch appearance
   function updateToggle(toggle, isActive) {
     if (isActive) {

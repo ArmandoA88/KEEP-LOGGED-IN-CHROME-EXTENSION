@@ -5,10 +5,57 @@ console.log('Keep Logged In content script loaded');
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'keepAlive') {
     // Perform keep alive actions without refreshing the page
+    console.log('📡 PING: Keep Logged In extension is keeping this tab alive');
+    
+    // Show visual indicator that ping happened
+    showPingIndicator();
+    
+    // Perform keep alive actions
     performKeepAliveActions();
-    sendResponse({ success: true });
+    
+    sendResponse({ success: true, url: window.location.href, title: document.title });
   }
 });
+
+// Show visual indicator that a ping happened
+function showPingIndicator() {
+  // Create a small, temporary visual indicator
+  const indicator = document.createElement('div');
+  indicator.innerHTML = '📡 Keep Alive Ping';
+  indicator.style.cssText = `
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #4CAF50;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 999999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+  
+  document.body.appendChild(indicator);
+  
+  // Fade in
+  setTimeout(() => {
+    indicator.style.opacity = '1';
+  }, 10);
+  
+  // Fade out and remove after 2 seconds
+  setTimeout(() => {
+    indicator.style.opacity = '0';
+    setTimeout(() => {
+      if (indicator.parentNode) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }, 300);
+  }, 2000);
+}
 
 // Perform various keep alive actions
 function performKeepAliveActions() {

@@ -10,151 +10,219 @@
 </head>
 <body>
     <h1>Keep Logged In Extension Icons</h1>
-    <p>Right-click each icon and "Save image as..." to save as PNG files.</p>
+    <p>Generate colorful icons that change based on extension state. Right-click to save as PNG files.</p>
     
     <div class="icon-set">
-        <h3>16x16 Icon</h3>
-        <canvas id="icon16" width="16" height="16"></canvas>
+        <h3>Active State Icons (Green - Extension ON)</h3>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div>
+                <p>16x16</p>
+                <canvas id="icon16-active" width="16" height="16"></canvas>
+            </div>
+            <div>
+                <p>48x48</p>
+                <canvas id="icon48-active" width="48" height="48"></canvas>
+            </div>
+            <div>
+                <p>128x128</p>
+                <canvas id="icon128-active" width="128" height="128"></canvas>
+            </div>
+        </div>
     </div>
     
     <div class="icon-set">
-        <h3>48x48 Icon</h3>
-        <canvas id="icon48" width="48" height="48"></canvas>
+        <h3>Inactive State Icons (Red - Extension OFF)</h3>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div>
+                <p>16x16</p>
+                <canvas id="icon16-inactive" width="16" height="16"></canvas>
+            </div>
+            <div>
+                <p>48x48</p>
+                <canvas id="icon48-inactive" width="48" height="48"></canvas>
+            </div>
+            <div>
+                <p>128x128</p>
+                <canvas id="icon128-inactive" width="128" height="128"></canvas>
+            </div>
+        </div>
     </div>
     
     <div class="icon-set">
-        <h3>128x128 Icon</h3>
-        <canvas id="icon128" width="128" height="128"></canvas>
+        <h3>Default Icons (Multi-color - Always visible)</h3>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div>
+                <p>16x16</p>
+                <canvas id="icon16" width="16" height="16"></canvas>
+            </div>
+            <div>
+                <p>48x48</p>
+                <canvas id="icon48" width="48" height="48"></canvas>
+            </div>
+            <div>
+                <p>128x128</p>
+                <canvas id="icon128" width="128" height="128"></canvas>
+            </div>
+        </div>
     </div>
 
     <script>
-        function createIcon(canvasId, size) {
+        function createIcon(canvasId, size, state = 'default') {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
             
-            // Create gradient background
-            const gradient = ctx.createLinearGradient(0, 0, size, size);
-            gradient.addColorStop(0, '#FF6B35');
-            gradient.addColorStop(0.5, '#F7931E');
-            gradient.addColorStop(1, '#FFD23F');
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
             
-            // Background circle
-            ctx.fillStyle = gradient;
+            const centerX = size/2;
+            const centerY = size/2;
+            
+            // Create different gradients based on state
+            let bgGradient, shieldColor, pulseColor, borderColor;
+            
+            if (state === 'active') {
+                // Green theme for active state
+                bgGradient = ctx.createLinearGradient(0, 0, size, size);
+                bgGradient.addColorStop(0, '#4CAF50');
+                bgGradient.addColorStop(0.5, '#66BB6A');
+                bgGradient.addColorStop(1, '#81C784');
+                shieldColor = '#2E7D32';
+                pulseColor = '#00E676';
+                borderColor = '#1B5E20';
+            } else if (state === 'inactive') {
+                // Red theme for inactive state
+                bgGradient = ctx.createLinearGradient(0, 0, size, size);
+                bgGradient.addColorStop(0, '#F44336');
+                bgGradient.addColorStop(0.5, '#EF5350');
+                bgGradient.addColorStop(1, '#E57373');
+                shieldColor = '#C62828';
+                pulseColor = '#FF1744';
+                borderColor = '#B71C1C';
+            } else {
+                // Multi-color theme for default
+                bgGradient = ctx.createLinearGradient(0, 0, size, size);
+                bgGradient.addColorStop(0, '#FF6B35');
+                bgGradient.addColorStop(0.3, '#F7931E');
+                bgGradient.addColorStop(0.6, '#FFD23F');
+                bgGradient.addColorStop(1, '#4CAF50');
+                shieldColor = '#4ECDC4';
+                pulseColor = '#FF4081';
+                borderColor = '#E55100';
+            }
+            
+            // Background circle with vibrant gradient
+            ctx.fillStyle = bgGradient;
             ctx.beginPath();
-            ctx.arc(size/2, size/2, size/2 - 2, 0, 2 * Math.PI);
+            ctx.arc(centerX, centerY, size/2 - 2, 0, 2 * Math.PI);
             ctx.fill();
             
-            // Border
-            ctx.strokeStyle = '#E55100';
-            ctx.lineWidth = Math.max(1, size/32);
+            // Outer glow effect
+            const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size/2);
+            glowGradient.addColorStop(0, 'rgba(255,255,255,0.3)');
+            glowGradient.addColorStop(0.7, 'rgba(255,255,255,0.1)');
+            glowGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = glowGradient;
+            ctx.fill();
+            
+            // Border with state color
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = Math.max(2, size/32);
             ctx.stroke();
             
             // Shield shape
-            const centerX = size/2;
-            const centerY = size/2;
-            const shieldWidth = size * 0.6;
-            const shieldHeight = size * 0.7;
+            const shieldWidth = size * 0.5;
+            const shieldHeight = size * 0.6;
             
-            ctx.fillStyle = '#4ECDC4';
+            ctx.fillStyle = shieldColor;
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY - shieldHeight/2 + size/8);
-            ctx.lineTo(centerX - shieldWidth/2 + size/8, centerY - shieldHeight/2 + size/4);
-            ctx.lineTo(centerX - shieldWidth/2 + size/8, centerY + size/8);
-            ctx.quadraticCurveTo(centerX - shieldWidth/2 + size/8, centerY + shieldHeight/2, centerX, centerY + shieldHeight/2 + size/8);
-            ctx.quadraticCurveTo(centerX + shieldWidth/2 - size/8, centerY + shieldHeight/2, centerX + shieldWidth/2 - size/8, centerY + size/8);
-            ctx.lineTo(centerX + shieldWidth/2 - size/8, centerY - shieldHeight/2 + size/4);
+            ctx.moveTo(centerX, centerY - shieldHeight/2 + size/12);
+            ctx.lineTo(centerX - shieldWidth/2 + size/12, centerY - shieldHeight/2 + size/8);
+            ctx.lineTo(centerX - shieldWidth/2 + size/12, centerY + size/12);
+            ctx.quadraticCurveTo(centerX - shieldWidth/2 + size/12, centerY + shieldHeight/2, centerX, centerY + shieldHeight/2 + size/12);
+            ctx.quadraticCurveTo(centerX + shieldWidth/2 - size/12, centerY + shieldHeight/2, centerX + shieldWidth/2 - size/12, centerY + size/12);
+            ctx.lineTo(centerX + shieldWidth/2 - size/12, centerY - shieldHeight/2 + size/8);
             ctx.closePath();
             ctx.fill();
             
-            // Shield border
-            ctx.strokeStyle = '#2E7D32';
-            ctx.lineWidth = Math.max(1, size/64);
-            ctx.stroke();
+            // Shield highlight
+            const highlightGradient = ctx.createLinearGradient(centerX - shieldWidth/4, centerY - shieldHeight/4, centerX + shieldWidth/4, centerY + shieldHeight/4);
+            highlightGradient.addColorStop(0, 'rgba(255,255,255,0.4)');
+            highlightGradient.addColorStop(1, 'rgba(255,255,255,0.1)');
+            ctx.fillStyle = highlightGradient;
+            ctx.fill();
             
-            // Checkmark
+            // Checkmark or X based on state
             ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = Math.max(2, size/16);
+            ctx.lineWidth = Math.max(3, size/12);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.beginPath();
-            ctx.moveTo(centerX - size/6, centerY);
-            ctx.lineTo(centerX - size/12, centerY + size/12);
-            ctx.lineTo(centerX + size/6, centerY - size/8);
+            
+            if (state === 'inactive') {
+                // Draw X for inactive state
+                ctx.moveTo(centerX - size/8, centerY - size/8);
+                ctx.lineTo(centerX + size/8, centerY + size/8);
+                ctx.moveTo(centerX + size/8, centerY - size/8);
+                ctx.lineTo(centerX - size/8, centerY + size/8);
+            } else {
+                // Draw checkmark for active/default state
+                ctx.moveTo(centerX - size/8, centerY - size/24);
+                ctx.lineTo(centerX - size/24, centerY + size/12);
+                ctx.lineTo(centerX + size/6, centerY - size/8);
+            }
             ctx.stroke();
             
-            // Activity indicator (small pulse)
-            if (size >= 48) {
-                ctx.fillStyle = '#FF4081';
+            // Activity pulse indicator
+            if (size >= 32) {
+                ctx.fillStyle = pulseColor;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY + size/4, size/16, 0, 2 * Math.PI);
+                ctx.arc(centerX + size/4, centerY + size/4, Math.max(2, size/20), 0, 2 * Math.PI);
                 ctx.fill();
                 
                 // Pulse ring
-                ctx.strokeStyle = '#FF4081';
+                ctx.strokeStyle = pulseColor;
                 ctx.lineWidth = Math.max(1, size/64);
                 ctx.beginPath();
-                ctx.arc(centerX, centerY + size/4, size/12, 0, 2 * Math.PI);
+                ctx.arc(centerX + size/4, centerY + size/4, Math.max(4, size/16), 0, 2 * Math.PI);
                 ctx.stroke();
             }
             
-            // Connection dots (only for larger icons)
-            if (size >= 128) {
-                ctx.fillStyle = '#9C27B0';
-                const dotSize = size/32;
-                const offset = size/3;
+            // Connection dots for larger icons
+            if (size >= 64) {
+                const dotColors = state === 'active' ? ['#00E676', '#4CAF50'] : 
+                                 state === 'inactive' ? ['#FF1744', '#F44336'] : 
+                                 ['#9C27B0', '#E91E63', '#FF9800', '#2196F3'];
                 
-                // Corner dots
-                ctx.beginPath();
-                ctx.arc(centerX - offset, centerY - offset, dotSize, 0, 2 * Math.PI);
-                ctx.fill();
+                const dotSize = Math.max(2, size/40);
+                const offset = size/3.5;
                 
-                ctx.beginPath();
-                ctx.arc(centerX + offset, centerY - offset, dotSize, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.arc(centerX - offset, centerY + offset, dotSize, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.arc(centerX + offset, centerY + offset, dotSize, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // Connection lines
-                ctx.strokeStyle = '#9C27B0';
-                ctx.lineWidth = Math.max(1, size/128);
-                ctx.globalAlpha = 0.6;
-                
-                ctx.beginPath();
-                ctx.moveTo(centerX - offset + dotSize, centerY - offset);
-                ctx.lineTo(centerX - shieldWidth/4, centerY - shieldHeight/4);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(centerX + offset - dotSize, centerY - offset);
-                ctx.lineTo(centerX + shieldWidth/4, centerY - shieldHeight/4);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(centerX - offset + dotSize, centerY + offset);
-                ctx.lineTo(centerX - shieldWidth/4, centerY + shieldHeight/4);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(centerX + offset - dotSize, centerY + offset);
-                ctx.lineTo(centerX + shieldWidth/4, centerY + shieldHeight/4);
-                ctx.stroke();
-                
-                ctx.globalAlpha = 1;
+                // Corner dots with different colors
+                dotColors.forEach((color, index) => {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    const angle = (index * Math.PI) / 2;
+                    const x = centerX + Math.cos(angle) * offset;
+                    const y = centerY + Math.sin(angle) * offset;
+                    ctx.arc(x, y, dotSize, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
             }
         }
         
-        // Create all icons
-        createIcon('icon16', 16);
-        createIcon('icon48', 48);
-        createIcon('icon128', 128);
+        // Create all icon variations
+        createIcon('icon16-active', 16, 'active');
+        createIcon('icon48-active', 48, 'active');
+        createIcon('icon128-active', 128, 'active');
         
-        // Add download functionality
+        createIcon('icon16-inactive', 16, 'inactive');
+        createIcon('icon48-inactive', 48, 'inactive');
+        createIcon('icon128-inactive', 128, 'inactive');
+        
+        createIcon('icon16', 16, 'default');
+        createIcon('icon48', 48, 'default');
+        createIcon('icon128', 128, 'default');
+        
+        // Download functionality
         function downloadIcon(canvasId, filename) {
             const canvas = document.getElementById(canvasId);
             const link = document.createElement('a');
@@ -165,13 +233,54 @@
         
         // Add download buttons
         document.body.innerHTML += `
-            <div style="margin-top: 30px;">
+            <div style="margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
                 <h3>Download Icons:</h3>
-                <button onclick="downloadIcon('icon16', 'icon16.png')">Download 16x16</button>
-                <button onclick="downloadIcon('icon48', 'icon48.png')">Download 48x48</button>
-                <button onclick="downloadIcon('icon128', 'icon128.png')">Download 128x128</button>
-                <br><br>
-                <button onclick="downloadIcon('icon16', 'icon16.png'); downloadIcon('icon48', 'icon48.png'); downloadIcon('icon128', 'icon128.png');">Download All Icons</button>
+                
+                <div style="margin: 15px 0;">
+                    <h4>Active State (Green):</h4>
+                    <button onclick="downloadIcon('icon16-active', 'icon16-active.png')" style="margin: 5px; padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px;">16x16 Active</button>
+                    <button onclick="downloadIcon('icon48-active', 'icon48-active.png')" style="margin: 5px; padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px;">48x48 Active</button>
+                    <button onclick="downloadIcon('icon128-active', 'icon128-active.png')" style="margin: 5px; padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px;">128x128 Active</button>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <h4>Inactive State (Red):</h4>
+                    <button onclick="downloadIcon('icon16-inactive', 'icon16-inactive.png')" style="margin: 5px; padding: 8px 12px; background: #F44336; color: white; border: none; border-radius: 4px;">16x16 Inactive</button>
+                    <button onclick="downloadIcon('icon48-inactive', 'icon48-inactive.png')" style="margin: 5px; padding: 8px 12px; background: #F44336; color: white; border: none; border-radius: 4px;">48x48 Inactive</button>
+                    <button onclick="downloadIcon('icon128-inactive', 'icon128-inactive.png')" style="margin: 5px; padding: 8px 12px; background: #F44336; color: white; border: none; border-radius: 4px;">128x128 Inactive</button>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <h4>Default State (Multi-color):</h4>
+                    <button onclick="downloadIcon('icon16', 'icon16.png')" style="margin: 5px; padding: 8px 12px; background: linear-gradient(45deg, #FF6B35, #4CAF50); color: white; border: none; border-radius: 4px;">16x16 Default</button>
+                    <button onclick="downloadIcon('icon48', 'icon48.png')" style="margin: 5px; padding: 8px 12px; background: linear-gradient(45deg, #FF6B35, #4CAF50); color: white; border: none; border-radius: 4px;">48x48 Default</button>
+                    <button onclick="downloadIcon('icon128', 'icon128.png')" style="margin: 5px; padding: 8px 12px; background: linear-gradient(45deg, #FF6B35, #4CAF50); color: white; border: none; border-radius: 4px;">128x128 Default</button>
+                </div>
+                
+                <div style="margin: 20px 0; padding-top: 15px; border-top: 2px solid #ddd;">
+                    <button onclick="
+                        downloadIcon('icon16', 'icon16.png'); 
+                        downloadIcon('icon48', 'icon48.png'); 
+                        downloadIcon('icon128', 'icon128.png');
+                        downloadIcon('icon16-active', 'icon16-active.png'); 
+                        downloadIcon('icon48-active', 'icon48-active.png'); 
+                        downloadIcon('icon128-active', 'icon128-active.png');
+                        downloadIcon('icon16-inactive', 'icon16-inactive.png'); 
+                        downloadIcon('icon48-inactive', 'icon48-inactive.png'); 
+                        downloadIcon('icon128-inactive', 'icon128-inactive.png');
+                    " style="padding: 12px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
+                        📥 Download All Icons (9 files)
+                    </button>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 6px; font-size: 14px;">
+                    <strong>Usage Instructions:</strong><br>
+                    • Use <strong>Default icons</strong> (icon16.png, icon48.png, icon128.png) for the main extension<br>
+                    • Use <strong>Active/Inactive icons</strong> if you want to implement dynamic icon changing in the extension code<br>
+                    • Green icons = Extension is ON and working<br>
+                    • Red icons = Extension is OFF or disabled<br>
+                    • Multi-color icons = Always visible regardless of state
+                </div>
             </div>
         `;
     </script>
