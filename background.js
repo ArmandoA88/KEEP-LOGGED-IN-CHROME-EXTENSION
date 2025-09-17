@@ -1,8 +1,9 @@
 // Background script for Keep Logged In extension
-let isActive = true;
-let refreshInterval = 4; // minutes
-let keepAliveMethod = 'ping'; // 'refresh' or 'ping'
+let isActive = null; // Will be loaded from storage
+let refreshInterval = null; // Will be loaded from storage
+let keepAliveMethod = null; // Will be loaded from storage
 let intervalId = null;
+let settingsLoaded = false;
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
@@ -16,19 +17,44 @@ chrome.runtime.onInstalled.addListener(() => {
 // Load settings from storage
 async function loadSettings() {
   try {
-    const result = await chrome.storage.sync.get({
-      isActive: true,
-      refreshInterval: 4,
-      keepAliveMethod: 'ping'
-    });
+    console.log('🔄 LOADING SETTINGS FROM STORAGE...');
     
-    isActive = result.isActive;
-    refreshInterval = result.refreshInterval;
-    keepAliveMethod = result.keepAliveMethod;
+    // Get existing settings without providing defaults that would overwrite user choices
+    const result = await chrome.storage.sync.get(['isActive', 'refreshInterval', 'keepAliveMethod']);
     
-    console.log('Settings loaded:', { isActive, refreshInterval, keepAliveMethod });
+    console.log('📦 Raw storage result:', result);
+    
+    // Only use defaults if no settings exist yet (first time install)
+    if (result.isActive !== undefined) {
+      isActive = result.isActive;
+      console.log('✅ Loaded user isActive:', isActive);
+    } else {
+      isActive = true; // Default only if not set
+      console.log('🆕 Using default isActive:', isActive);
+    }
+    
+    if (result.refreshInterval !== undefined) {
+      refreshInterval = result.refreshInterval;
+      console.log('✅ Loaded user refreshInterval:', refreshInterval);
+    } else {
+      refreshInterval = 4; // Default only if not set
+      console.log('🆕 Using default refreshInterval:', refreshInterval);
+    }
+    
+    if (result.keepAliveMethod !== undefined) {
+      keepAliveMethod = result.keepAliveMethod;
+      console.log('✅ Loaded user keepAliveMethod:', keepAliveMethod);
+    } else {
+      keepAliveMethod = 'ping'; // Default only if not set
+      console.log('🆕 Using default keepAliveMethod:', keepAliveMethod);
+    }
+    
+    settingsLoaded = true;
+    console.log('✅ SETTINGS FULLY LOADED:', { isActive, refreshInterval, keepAliveMethod });
+    console.log('🔧 USER SETTINGS PRESERVED - No defaults applied to existing settings');
   } catch (error) {
-    console.error('Error loading settings:', error);
+    console.error('❌ Error loading settings:', error);
+    settingsLoaded = false;
   }
 }
 
@@ -105,7 +131,9 @@ function startKeepAlive() {
     return;
   }
   
-  const intervalMs = refreshInterval * 60 * 1000; // Convert minutes to milliseconds
+  // Ensure refreshInterval is at least 1 minute to avoid alarm errors
+  const effectiveRefreshInterval = Math.max(1, refreshInterval); 
+  const intervalMs = effectiveRefreshInterval * 60 * 1000; // Convert minutes to milliseconds
   
   // Set up the interval
   intervalId = setInterval(() => {
@@ -118,16 +146,16 @@ function startKeepAlive() {
     }
   }, intervalMs);
   
-  console.log(`🚀 KEEP ALIVE TIMER STARTED: ${refreshInterval} minute interval (${intervalMs}ms) using ${keepAliveMethod} method`);
+  console.log(`🚀 KEEP ALIVE TIMER STARTED: ${effectiveRefreshInterval} minute interval (${intervalMs}ms) using ${keepAliveMethod} method`);
   console.log(`⏰ Next keep alive will run at: ${new Date(Date.now() + intervalMs).toLocaleTimeString()}`);
   
   // Also set up Chrome alarms as backup (more reliable for service workers)
   chrome.alarms.clear('keepAliveAlarm');
   chrome.alarms.create('keepAliveAlarm', { 
-    delayInMinutes: refreshInterval,
-    periodInMinutes: refreshInterval 
+    delayInMinutes: effectiveRefreshInterval, // Use effective interval
+    periodInMinutes: effectiveRefreshInterval // Use effective interval
   });
-  console.log(`🔔 Chrome alarm also set for ${refreshInterval} minute intervals`);
+  console.log(`🔔 Chrome alarm also set for ${effectiveRefreshInterval} minute intervals`);
 }
 
 // Stop keep alive functionality
@@ -158,21 +186,7 @@ async function performKeepAlive() {
     await chrome.action.setBadgeText({ text: '●' });
     await chrome.action.setBadgeBackgroundColor({ color: keepAliveMethod === 'refresh' ? '#FF6B35' : '#4CAF50' });
     
-    // Show notification
-    const notificationMessage = keepAliveMethod === 'refresh' ? 
-      `🔄 Refreshing ${validTabs.length} tabs to keep sessions alive` :
-      `📡 Pinging ${validTabs.length} tabs to keep sessions alive`;
-    
-    try {
-      await chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        title: 'Keep Logged In',
-        message: notificationMessage
-      });
-    } catch (notifError) {
-      console.log('Notifications not available, using console only');
-    }
+    // Notifications removed to reduce distractions - using badge and console logging instead
     
     let successCount = 0;
     let errorCount = 0;
@@ -242,9 +256,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       keepAliveMethod
     });
   } else if (request.action === 'updateSettings') {
+    console.log('⚙️ USER CHANGED SETTINGS:', request.settings);
+    console.log('📝 Previous settings:', { isActive, refreshInterval, keepAliveMethod });
+    
     isActive = request.settings.isActive;
     refreshInterval = request.settings.refreshInterval;
     keepAliveMethod = request.settings.keepAliveMethod;
+    
+    console.log('✅ New settings applied:', { isActive, refreshInterval, keepAliveMethod });
     
     saveSettings();
     
