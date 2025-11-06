@@ -2,58 +2,90 @@
 let isActive = null; // Will be loaded from storage
 let refreshInterval = null; // Will be loaded from storage
 let keepAliveMethod = null; // Will be loaded from storage
-let intervalId = null;
 let settingsLoaded = false;
+let offscreenCreating = false; // To prevent multiple offscreen document creations
+
+// Diagnostic tracking
+let serviceWorkerStartTime = Date.now();
+let totalMessages = 0;
+let totalAlarms = 0;
+let lastActivityTime = Date.now();
+
+// Enhanced logging function
+function log(level, message, data = null) {
+  const timestamp = new Date().toLocaleTimeString();
+  const uptime = Math.floor((Date.now() - serviceWorkerStartTime) / 1000);
+  const prefix = `[SW ${timestamp} | Uptime: ${uptime}s]`;
+  
+  lastActivityTime = Date.now();
+  
+  if (level === 'error') {
+    console.error(`❌ ${prefix} ${message}`, data || '');
+  } else if (level === 'warn') {
+    console.warn(`⚠️ ${prefix} ${message}`, data || '');
+  } else if (level === 'success') {
+    console.log(`✅ ${prefix} ${message}`, data || '');
+  } else if (level === 'critical') {
+    console.error(`🔥 ${prefix} CRITICAL: ${message}`, data || '');
+  } else {
+    console.log(`💬 ${prefix} ${message}`, data || '');
+  }
+}
+
+log('success', '🚀 SERVICE WORKER STARTED!');
+log('info', `Start time: ${new Date(serviceWorkerStartTime).toLocaleTimeString()}`);
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Keep Logged In extension installed');
+  log('success', 'Keep Logged In extension installed/updated');
+  isActive = true; // Force active on install
+  saveSettings(); // Persist the active state
   loadSettings().then(() => {
     updateIcon();
     startKeepAlive();
+    setupOffscreenDocument(); // Always setup offscreen document on install
   });
 });
 
 // Load settings from storage
 async function loadSettings() {
   try {
-    console.log('🔄 LOADING SETTINGS FROM STORAGE...');
+    log('info', '🔄 LOADING SETTINGS FROM STORAGE...');
     
     // Get existing settings without providing defaults that would overwrite user choices
     const result = await chrome.storage.sync.get(['isActive', 'refreshInterval', 'keepAliveMethod']);
     
-    console.log('📦 Raw storage result:', result);
+    log('info', '📦 Raw storage result:', result);
     
     // Only use defaults if no settings exist yet (first time install)
     if (result.isActive !== undefined) {
       isActive = result.isActive;
-      console.log('✅ Loaded user isActive:', isActive);
+      log('success', 'Loaded user isActive:', isActive);
     } else {
       isActive = true; // Default only if not set
-      console.log('🆕 Using default isActive:', isActive);
+      log('info', 'Using default isActive:', isActive);
     }
     
     if (result.refreshInterval !== undefined) {
       refreshInterval = result.refreshInterval;
-      console.log('✅ Loaded user refreshInterval:', refreshInterval);
+      log('success', 'Loaded user refreshInterval:', refreshInterval);
     } else {
       refreshInterval = 4; // Default only if not set
-      console.log('🆕 Using default refreshInterval:', refreshInterval);
+      log('info', 'Using default refreshInterval:', refreshInterval);
     }
     
     if (result.keepAliveMethod !== undefined) {
       keepAliveMethod = result.keepAliveMethod;
-      console.log('✅ Loaded user keepAliveMethod:', keepAliveMethod);
+      log('success', 'Loaded user keepAliveMethod:', keepAliveMethod);
     } else {
       keepAliveMethod = 'ping'; // Default only if not set
-      console.log('🆕 Using default keepAliveMethod:', keepAliveMethod);
+      log('info', 'Using default keepAliveMethod:', keepAliveMethod);
     }
     
     settingsLoaded = true;
-    console.log('✅ SETTINGS FULLY LOADED:', { isActive, refreshInterval, keepAliveMethod });
-    console.log('🔧 USER SETTINGS PRESERVED - No defaults applied to existing settings');
+    log('success', '✅ SETTINGS FULLY LOADED:', { isActive, refreshInterval, keepAliveMethod });
   } catch (error) {
-    console.error('❌ Error loading settings:', error);
+    log('error', 'Error loading settings:', error.message);
     settingsLoaded = false;
   }
 }
@@ -66,10 +98,10 @@ async function saveSettings() {
       refreshInterval,
       keepAliveMethod
     });
-    console.log('Settings saved');
+    log('success', 'Settings saved successfully');
     updateIcon(); // Update icon when settings change
   } catch (error) {
-    console.error('Error saving settings:', error);
+    log('error', 'Error saving settings:', error.message);
   }
 }
 
@@ -89,10 +121,9 @@ async function updateIcon() {
     
     try {
       await chrome.action.setIcon({ path: iconPath });
-      console.log(`Icon updated: ${isActive ? 'ACTIVE (Green)' : 'INACTIVE (Red)'}`);
+      log('success', `Icon updated: ${isActive ? 'ACTIVE (Green)' : 'INACTIVE (Red)'}`);
     } catch (iconError) {
-      // If state-specific icons don't exist, try default icons
-      console.log('State-specific icons not found, trying default icons...');
+      log('warn', 'State-specific icons not found, trying default icons...');
       try {
         await chrome.action.setIcon({ 
           path: {
@@ -101,10 +132,9 @@ async function updateIcon() {
             "128": "icon128.png"
           }
         });
-        console.log('Using default icons');
+        log('info', 'Using default icons');
       } catch (defaultIconError) {
-        // If no icons exist, just update the title
-        console.log('No icon files found, using default Chrome icon');
+        log('warn', 'No icon files found, using default Chrome icon');
       }
     }
     
@@ -115,78 +145,51 @@ async function updateIcon() {
     await chrome.action.setTitle({ title: title });
     
   } catch (error) {
-    console.error('Error updating icon:', error);
+    log('error', 'Error updating icon:', error.message);
   }
 }
 
 // Start keep alive functionality
 function startKeepAlive() {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
-  }
-  
   if (!isActive) {
-    console.log('🛑 Keep alive is disabled');
+    log('warn', '🛑 Keep alive is disabled');
+    chrome.alarms.clear('keepAliveAlarm');
     return;
   }
   
   // Ensure refreshInterval is at least 1 minute to avoid alarm errors
   const effectiveRefreshInterval = Math.max(1, refreshInterval); 
-  const intervalMs = effectiveRefreshInterval * 60 * 1000; // Convert minutes to milliseconds
   
-  // Set up the interval
-  intervalId = setInterval(() => {
-    console.log('⏰ TIMER TRIGGERED: Interval fired, checking if active...');
-    if (isActive) {
-      console.log('✅ Extension is active, performing keep alive...');
-      performKeepAlive();
-    } else {
-      console.log('❌ Extension is inactive, skipping keep alive');
-    }
-  }, intervalMs);
-  
-  console.log(`🚀 KEEP ALIVE TIMER STARTED: ${effectiveRefreshInterval} minute interval (${intervalMs}ms) using ${keepAliveMethod} method`);
-  console.log(`⏰ Next keep alive will run at: ${new Date(Date.now() + intervalMs).toLocaleTimeString()}`);
-  
-  // Also set up Chrome alarms as backup (more reliable for service workers)
   chrome.alarms.clear('keepAliveAlarm');
   chrome.alarms.create('keepAliveAlarm', { 
-    delayInMinutes: effectiveRefreshInterval, // Use effective interval
-    periodInMinutes: effectiveRefreshInterval // Use effective interval
+    delayInMinutes: effectiveRefreshInterval,
+    periodInMinutes: effectiveRefreshInterval
   });
-  console.log(`🔔 Chrome alarm also set for ${effectiveRefreshInterval} minute intervals`);
+  log('success', `🔔 Chrome alarm set for ${effectiveRefreshInterval} minute intervals`);
 }
 
 // Stop keep alive functionality
 function stopKeepAlive() {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
-    console.log('🛑 Keep alive interval stopped');
-  }
-  
-  // Also clear Chrome alarms
   chrome.alarms.clear('keepAliveAlarm');
-  console.log('🛑 Keep alive alarms cleared');
+  log('warn', '🛑 Keep alive alarms cleared');
 }
 
 // Perform keep alive action
 async function performKeepAlive() {
   try {
+    log('info', '🔄 KEEP ALIVE STARTING...');
+    
     const tabs = await chrome.tabs.query({});
     const validTabs = tabs.filter(tab => 
       !tab.url.startsWith('chrome://') && 
       !tab.url.startsWith('chrome-extension://')
     );
     
-    console.log(`🔄 KEEP ALIVE STARTING: ${keepAliveMethod} method on ${validTabs.length} tabs`);
+    log('info', `Processing ${validTabs.length} tabs using ${keepAliveMethod} method`);
     
     // Update badge to show activity
     await chrome.action.setBadgeText({ text: '●' });
     await chrome.action.setBadgeBackgroundColor({ color: keepAliveMethod === 'refresh' ? '#FF6B35' : '#4CAF50' });
-    
-    // Notifications removed to reduce distractions - using badge and console logging instead
     
     let successCount = 0;
     let errorCount = 0;
@@ -202,7 +205,7 @@ async function performKeepAlive() {
         }
       } catch (error) {
         errorCount++;
-        console.error(`❌ Failed to ${keepAliveMethod} tab ${tab.id}:`, error);
+        log('error', `Failed to ${keepAliveMethod} tab ${tab.id}:`, error.message);
       }
     }
     
@@ -211,8 +214,7 @@ async function performKeepAlive() {
       await chrome.action.setBadgeText({ text: '' });
     }, 3000);
     
-    // Log summary
-    console.log(`✅ KEEP ALIVE COMPLETED: ${successCount} successful, ${errorCount} failed`);
+    log('success', `✅ KEEP ALIVE COMPLETED: ${successCount} successful, ${errorCount} failed`);
     
     // Update title with last activity time
     const now = new Date().toLocaleTimeString();
@@ -222,7 +224,7 @@ async function performKeepAlive() {
     await chrome.action.setTitle({ title: title });
     
   } catch (error) {
-    console.error('❌ Error performing keep alive:', error);
+    log('error', 'Error performing keep alive:', error.message);
   }
 }
 
@@ -230,9 +232,9 @@ async function performKeepAlive() {
 async function refreshTab(tab) {
   try {
     await chrome.tabs.reload(tab.id);
-    console.log(`Refreshed tab: ${tab.title}`);
+    log('info', `Refreshed tab: ${tab.title}`);
   } catch (error) {
-    console.error(`Error refreshing tab ${tab.id}:`, error);
+    log('error', `Error refreshing tab ${tab.id}:`, error.message);
   }
 }
 
@@ -240,46 +242,47 @@ async function refreshTab(tab) {
 async function pingTab(tab) {
   try {
     await chrome.tabs.sendMessage(tab.id, { action: 'keepAlive' });
-    console.log(`Pinged tab: ${tab.title}`);
+    log('info', `Pinged tab: ${tab.title}`);
   } catch (error) {
-    // Tab might not have content script loaded, that's okay
-    console.log(`Could not ping tab ${tab.id}, might not support content scripts`);
+    log('warn', `Could not ping tab ${tab.id}, might not support content scripts`);
   }
 }
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  totalMessages++;
+  
   if (request.action === 'getSettings') {
+    log('info', 'Popup requested settings');
     sendResponse({
       isActive,
       refreshInterval,
       keepAliveMethod
     });
   } else if (request.action === 'updateSettings') {
-    console.log('⚙️ USER CHANGED SETTINGS:', request.settings);
-    console.log('📝 Previous settings:', { isActive, refreshInterval, keepAliveMethod });
+    log('info', '⚙️ USER CHANGED SETTINGS:', request.settings);
     
     isActive = request.settings.isActive;
     refreshInterval = request.settings.refreshInterval;
     keepAliveMethod = request.settings.keepAliveMethod;
     
-    console.log('✅ New settings applied:', { isActive, refreshInterval, keepAliveMethod });
+    log('success', '✅ New settings applied:', { isActive, refreshInterval, keepAliveMethod });
     
     saveSettings();
     
     if (isActive) {
       startKeepAlive();
+      setupOffscreenDocument();
     } else {
       stopKeepAlive();
+      closeOffscreenDocument();
     }
     
     sendResponse({ success: true });
   } else if (request.action === 'testKeepAlive') {
-    // Handle manual test trigger
-    console.log('🧪 MANUAL TEST: User triggered keep alive test');
+    log('info', '🧪 MANUAL TEST triggered by user');
     
     performKeepAlive().then(() => {
-      // Get the latest results
       chrome.tabs.query({}).then(tabs => {
         const validTabs = tabs.filter(tab => 
           !tab.url.startsWith('chrome://') && 
@@ -290,55 +293,227 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           success: true,
           method: keepAliveMethod,
           tabCount: validTabs.length,
-          successCount: validTabs.length, // Simplified for demo
+          successCount: validTabs.length,
           errorCount: 0
         });
       });
     }).catch(error => {
-      console.error('Test failed:', error);
+      log('error', 'Test failed:', error.message);
       sendResponse({
         success: false,
         error: error.message
       });
     });
     
-    return true; // Keep message channel open for async response
+    return true;
   }
 });
 
-// Handle Chrome alarms (more reliable than setInterval for service workers)
+// Handle Chrome alarms
 chrome.alarms.onAlarm.addListener((alarm) => {
+  totalAlarms++;
+  
   if (alarm.name === 'keepAliveAlarm') {
-    console.log('🔔 CHROME ALARM TRIGGERED: Keep alive alarm fired');
+    log('success', `🔔 CHROME ALARM TRIGGERED (alarm #${totalAlarms})`);
     if (isActive) {
-      console.log('✅ Extension is active, performing keep alive via alarm...');
+      log('info', 'Extension is active, performing keep alive...');
       performKeepAlive();
     } else {
-      console.log('❌ Extension is inactive, skipping alarm-triggered keep alive');
+      log('warn', 'Extension is inactive, skipping alarm-triggered keep alive');
     }
   }
 });
 
 // Handle extension startup
 chrome.runtime.onStartup.addListener(() => {
+  log('success', '🔄 Chrome browser started, service worker initializing...');
+  serviceWorkerStartTime = Date.now();
+  isActive = true;
+  saveSettings();
   loadSettings().then(() => {
     updateIcon();
     startKeepAlive();
+    setupOffscreenDocument();
   });
 });
 
-// Keep service worker alive and handle wake-up
+// Handle persistent connections from offscreen document
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'keep-alive') {
+    log('success', '🔌 Persistent connection ESTABLISHED from offscreen document');
+    
+    port.onMessage.addListener((message) => {
+      totalMessages++;
+      
+      if (message.type === 'keep-alive-ping') {
+        log('success', `💓 Keep-alive ping #${message.attempt} received from offscreen (uptime: ${Math.floor((Date.now() - serviceWorkerStartTime) / 1000)}s)`);
+        
+        // Send pong response
+        try {
+          port.postMessage({ type: 'pong', timestamp: Date.now() });
+          log('success', 'Sent pong response to offscreen');
+        } catch (error) {
+          log('error', 'Failed to send pong response:', error.message);
+        }
+      }
+    });
+    
+    port.onDisconnect.addListener(() => {
+      const error = chrome.runtime.lastError;
+      log('error', '🔌 Offscreen connection DISCONNECTED', error ? error.message : 'No error details');
+    });
+  }
+});
+
+// Keep service worker alive with message handling
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // This helps keep the service worker active
+  totalMessages++;
+  
+  // Handle keep-alive pings from offscreen document
+  if (message.action === 'keepServiceWorkerAlive') {
+    const uptime = Math.floor((Date.now() - serviceWorkerStartTime) / 1000);
+    log('success', `💓 Runtime keep-alive ping #${message.attempt} (uptime: ${uptime}s, total messages: ${totalMessages})`);
+    sendResponse({ status: 'alive', timestamp: Date.now(), uptime: uptime, totalMessages: totalMessages });
+    return true;
+  }
+  
   return true;
 });
 
-// Handle service worker wake-up - restart timers if needed
-chrome.runtime.onStartup.addListener(() => {
-  console.log('🔄 Service worker woke up, restarting keep alive...');
-  loadSettings().then(() => {
-    if (isActive) {
-      startKeepAlive();
+// Monitor tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && isActive) {
+    log('info', `Tab updated: ${tab.title}`);
+  }
+});
+
+// Monitor tab activation
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  log('info', `Tab activated: ${activeInfo.tabId}`);
+});
+
+// Offscreen document management
+async function setupOffscreenDocument() {
+  if (offscreenCreating) {
+    log('warn', 'Offscreen document creation already in progress');
+    return;
+  }
+  
+  try {
+    log('info', 'Checking for existing offscreen document...');
+    
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [chrome.runtime.getURL('offscreen.html')]
+    });
+
+    if (existingContexts.length > 0) {
+      log('success', 'Offscreen document already exists');
+      return;
     }
-  });
+
+    log('info', 'Creating new offscreen document...');
+    offscreenCreating = true;
+    
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: ['AUDIO_PLAYBACK'],
+      justification: 'Keep the service worker alive for periodic tasks and prevent extension timeout.'
+    });
+    
+    log('success', '✅ Offscreen document created successfully - Service worker will stay alive!');
+    
+  } catch (err) {
+    log('error', 'Failed to create offscreen document:', err.message);
+    
+    // Retry after a delay
+    setTimeout(() => {
+      log('warn', 'Retrying offscreen document creation...');
+      offscreenCreating = false;
+      setupOffscreenDocument();
+    }, 5000);
+  } finally {
+    offscreenCreating = false;
+  }
+}
+
+// Periodic health check for offscreen document
+setInterval(async () => {
+  try {
+    const uptime = Math.floor((Date.now() - serviceWorkerStartTime) / 1000);
+    const idleTime = Math.floor((Date.now() - lastActivityTime) / 1000);
+    
+    log('info', `🏥 SERVICE WORKER HEALTH CHECK`);
+    log('info', `   - Uptime: ${uptime}s`);
+    log('info', `   - Idle Time: ${idleTime}s`);
+    log('info', `   - Total Messages: ${totalMessages}`);
+    log('info', `   - Total Alarms: ${totalAlarms}`);
+    log('info', `   - Active: ${isActive}`);
+    
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [chrome.runtime.getURL('offscreen.html')]
+    });
+
+    if (existingContexts.length === 0 && isActive) {
+      log('error', '⚠️ OFFSCREEN DOCUMENT MISSING! Recreating...');
+      await setupOffscreenDocument();
+    } else {
+      log('success', `Offscreen document status: ${existingContexts.length > 0 ? 'ACTIVE' : 'NOT CREATED'}`);
+    }
+  } catch (err) {
+    log('error', 'Error in health check:', err.message);
+  }
+}, 30000); // Every 30 seconds
+
+async function closeOffscreenDocument() {
+  try {
+    log('info', 'Attempting to close offscreen document...');
+    
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [chrome.runtime.getURL('offscreen.html')]
+    });
+
+    if (existingContexts.length === 0) {
+      log('info', 'No offscreen document to close');
+      return;
+    }
+
+    await chrome.offscreen.closeDocument();
+    log('success', 'Offscreen document closed');
+  } catch (err) {
+    log('error', 'Failed to close offscreen document:', err.message);
+  }
+}
+
+// Log when service worker might be shutting down
+let shutdownTimer;
+function resetShutdownTimer() {
+  if (shutdownTimer) clearTimeout(shutdownTimer);
+  
+  shutdownTimer = setTimeout(() => {
+    log('critical', '⛔ SERVICE WORKER IDLE FOR 25+ SECONDS - MIGHT SHUTDOWN SOON!');
+    log('critical', 'If you see this message, the keep-alive mechanism is failing!');
+  }, 25000);
+}
+
+// Reset timer on any activity
+resetShutdownTimer();
+chrome.runtime.onMessage.addListener(() => {
+  resetShutdownTimer();
+  return true;
+});
+
+log('success', '🎯 Background service worker fully initialized and ready!');
+log('info', `Settings loaded status: ${settingsLoaded}`);
+log('info', 'Starting settings load...');
+
+// Load settings on startup
+loadSettings().then(() => {
+  updateIcon();
+  if (isActive) {
+    startKeepAlive();
+    setupOffscreenDocument();
+  }
 });
