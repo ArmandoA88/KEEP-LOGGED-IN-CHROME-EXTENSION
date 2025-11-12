@@ -37,7 +37,7 @@ async function loadSettings() {
       refreshInterval = result.refreshInterval;
       console.log('✅ Loaded user refreshInterval:', refreshInterval);
     } else {
-      refreshInterval = 4; // Default only if not set
+      refreshInterval = 5; // Default only if not set
       console.log('🆕 Using default refreshInterval:', refreshInterval);
     }
     
