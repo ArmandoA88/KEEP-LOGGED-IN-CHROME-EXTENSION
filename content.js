@@ -1,18 +1,18 @@
 // Content script for Keep Logged In extension
-console.log('Keep Logged In content script loaded');
+// console.log('Keep Logged In content script loaded');
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'keepAlive') {
     // Perform keep alive actions without refreshing the page
-    console.log('📡 PING: Keep Logged In extension is keeping this tab alive');
-    
+    // console.log('📡 PING: Keep Logged In extension is keeping this tab alive');
+
     // Show visual indicator that ping happened
     showPingIndicator();
-    
+
     // Perform keep alive actions
     performKeepAliveActions();
-    
+
     sendResponse({ success: true, url: window.location.href, title: document.title });
   }
 });
@@ -38,14 +38,14 @@ function showPingIndicator() {
     opacity: 0;
     transition: opacity 0.3s ease;
   `;
-  
+
   document.body.appendChild(indicator);
-  
+
   // Fade in
   setTimeout(() => {
     indicator.style.opacity = '1';
   }, 10);
-  
+
   // Fade out and remove after 2 seconds
   setTimeout(() => {
     indicator.style.opacity = '0';
@@ -62,14 +62,14 @@ function performKeepAliveActions() {
   try {
     // Method 1: Simulate user activity by moving mouse cursor slightly
     simulateActivity();
-    
+
     // Method 2: Send a small network request to keep connection alive
     sendKeepAliveRequest();
-    
+
     // Method 3: Interact with common session elements
     interactWithSessionElements();
-    
-    console.log('Keep alive actions performed');
+
+    // console.log('Keep alive actions performed');
   } catch (error) {
     console.error('Error performing keep alive actions:', error);
   }
@@ -86,7 +86,7 @@ function simulateActivity() {
     clientY: Math.random() * 10
   });
   document.dispatchEvent(event);
-  
+
   // Simulate a small scroll to show activity
   window.scrollBy(0, 1);
   setTimeout(() => window.scrollBy(0, -1), 100);
@@ -98,8 +98,8 @@ function sendKeepAliveRequest() {
   try {
     const img = new Image();
     img.src = window.location.origin + '/favicon.ico?' + Date.now();
-    img.onerror = () => {}; // Ignore errors
-    img.onload = () => {}; // Ignore success
+    img.onerror = () => { }; // Ignore errors
+    img.onload = () => { }; // Ignore success
   } catch (error) {
     // Ignore errors - this is just a keep alive attempt
   }
@@ -115,7 +115,7 @@ function interactWithSessionElements() {
     '[data-session]',
     '[data-keepalive]'
   ];
-  
+
   sessionElements.forEach(selector => {
     const elements = document.querySelectorAll(selector);
     elements.forEach(element => {
@@ -179,11 +179,11 @@ const originalSetTimeout = window.setTimeout;
 const originalSetInterval = window.setInterval;
 
 // Extend timeouts that might be session-related
-window.setTimeout = function(callback, delay, ...args) {
+window.setTimeout = function (callback, delay, ...args) {
   // If delay suggests it might be a session timeout (5+ minutes), extend it
   if (delay >= 300000) { // 5 minutes or more
     delay = delay * 2; // Double the timeout
-    console.log('Extended timeout from', delay/2, 'to', delay, 'ms');
+    // console.log('Extended timeout from', delay/2, 'to', delay, 'ms');
   }
   return originalSetTimeout.call(this, callback, delay, ...args);
 };
@@ -202,7 +202,7 @@ function monitorSessionWarnings() {
             '[id*="session"][id*="warning"]',
             '[id*="timeout"][id*="warning"]'
           ];
-          
+
           sessionWarningSelectors.forEach(selector => {
             const warnings = node.querySelectorAll ? node.querySelectorAll(selector) : [];
             warnings.forEach(warning => {
@@ -211,7 +211,7 @@ function monitorSessionWarnings() {
               extendButtons.forEach(button => {
                 const text = button.textContent.toLowerCase();
                 if (text.includes('extend') || text.includes('stay') || text.includes('continue')) {
-                  console.log('Auto-clicking session extend button');
+                  // console.log('Auto-clicking session extend button');
                   button.click();
                 }
               });
@@ -221,7 +221,7 @@ function monitorSessionWarnings() {
       });
     });
   });
-  
+
   observer.observe(document.body, {
     childList: true,
     subtree: true

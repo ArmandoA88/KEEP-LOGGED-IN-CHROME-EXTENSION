@@ -11,20 +11,9 @@ let lastHeartbeat = Date.now();
 const START_TIME = Date.now();
 
 // Logging utility to match user's preference
+// Logging utility - Disabled for production
 function log(level, message) {
-  const uptime = Math.floor((Date.now() - START_TIME) / 1000);
-  const timestamp = new Date().toLocaleTimeString();
-  const prefix = `[SW ${timestamp} | Uptime: ${uptime}s]`;
-
-  if (level === 'error') {
-    console.error(`❌ ${prefix} ${message}`);
-  } else if (level === 'warn') {
-    console.warn(`⚠️ ${prefix} ${message}`);
-  } else if (level === 'critical') {
-    console.error(`🔥 ${prefix} CRITICAL: ${message}`);
-  } else {
-    console.log(`ℹ️ ${prefix} ${message}`);
-  }
+  // Production build: Logging disabled
 }
 
 // Initialize Extension

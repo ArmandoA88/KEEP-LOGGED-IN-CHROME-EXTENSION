@@ -85,7 +85,7 @@ export class KeepAliveService {
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
             if (currentTime < settings.activeHours.start || currentTime > settings.activeHours.end) {
-                console.log('Skipping keep-alive: Outside active hours');
+                // console.log('Skipping keep-alive: Outside active hours');
                 return false;
             }
         }

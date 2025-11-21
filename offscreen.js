@@ -2,7 +2,7 @@
 // It actively keeps the service worker alive by maintaining a persistent connection
 // and periodically pinging the background service worker.
 
-console.log('🚀 [OFFSCREEN] Script loaded at:', new Date().toLocaleTimeString());
+// console.log('🚀 [OFFSCREEN] Script loaded at:', new Date().toLocaleTimeString());
 
 let port = null;
 let keepAliveInterval = null;
@@ -14,7 +14,7 @@ async function initialize() {
     await setupSilentAudio();
     connectToServiceWorker();
     startKeepAlivePing();
-    console.log('✅ [OFFSCREEN] Initialization complete');
+    // console.log('✅ [OFFSCREEN] Initialization complete');
   } catch (err) {
     console.error('❌ [OFFSCREEN] Initialization failed:', err);
   }
@@ -39,17 +39,17 @@ async function setupSilentAudio() {
     gainNode.connect(audioContext.destination);
 
     oscillator.start();
-    console.log('🔊 [OFFSCREEN] Silent audio oscillator started');
+    // console.log('🔊 [OFFSCREEN] Silent audio oscillator started');
 
     // Resume context if suspended (browser policy)
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
-      console.log('🔊 [OFFSCREEN] AudioContext resumed');
+      // console.log('🔊 [OFFSCREEN] AudioContext resumed');
     }
 
     // Monitor state
     audioContext.onstatechange = () => {
-      console.log(`🔊 [OFFSCREEN] AudioContext state: ${audioContext.state}`);
+      // console.log(`🔊 [OFFSCREEN] AudioContext state: ${audioContext.state}`);
     };
 
   } catch (err) {
@@ -61,7 +61,7 @@ function connectToServiceWorker() {
   if (port) return;
 
   try {
-    console.log('🔌 [OFFSCREEN] Connecting to Service Worker...');
+    // console.log('🔌 [OFFSCREEN] Connecting to Service Worker...');
     port = chrome.runtime.connect({ name: 'keep-alive' });
 
     port.onDisconnect.addListener(() => {
