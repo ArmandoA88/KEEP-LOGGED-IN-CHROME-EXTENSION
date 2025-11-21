@@ -154,12 +154,60 @@
       background: var(--primary-hover);
     }
 
+    /* Tabs */
+    .nav-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .nav-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     /* Settings Section */
+    .settings-section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0 0 12px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .setting-item {
@@ -190,6 +238,68 @@
 
     .setting-input:focus {
       border-color: var(--primary);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: var(--text-muted);
+      transition: .4s;
+    }
+
+    input:checked+.slider {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(16px);
+      background-color: white;
+    }
+
+    .slider.round {
+      border-radius: 20px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
     }
 
     /* Active Tabs Dashboard */
@@ -272,6 +382,36 @@
       gap: 4px;
     }
 
+    /* Activity Log */
+    .activity-log {
+      max-height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .log-entry {
+      font-size: 11px;
+      padding: 8px;
+      background: var(--bg-card);
+      border-radius: 6px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 20px;
+    }
+
     /* Test Button */
     .test-btn {
       width: 100%;
@@ -304,6 +444,53 @@
       background: var(--border);
       border-radius: 4px;
     }
+
+    /* Scroll Indicator */
+    .scroll-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffffff;
+      font-size: 24px;
+      animation: bounce 2s infinite;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 100;
+      background: var(--primary);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .scroll-indicator.visible {
+      opacity: 1;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      20%,
+      50%,
+      80%,
+      100% {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      40% {
+        transform: translateX(-50%) translateY(-5px);
+      }
+
+      60% {
+        transform: translateX(-50%) translateY(-3px);
+      }
+    }
   </style>
 </head>
 
@@ -330,30 +517,99 @@
       </button>
     </div>
 
-    <div class="settings-grid">
-      <div class="setting-item">
-        <label class="setting-label">Refresh (min)</label>
-        <input type="number" class="setting-input" id="intervalInput" min="1" max="60" value="3">
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="settings">Settings</button>
+      <button class="nav-tab" data-tab="activity">Activity Log</button>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings-tab" class="tab-content active">
+      <div class="dashboard">
+        <div class="dashboard-header">
+          <span class="dashboard-title">Active Tabs</span>
+          <span class="tab-count" id="tabCount">0 monitored</span>
+        </div>
+        <div class="tab-list" id="tabList">
+          <!-- Tabs will be injected here -->
+        </div>
+        <button class="test-btn" id="testBtn">🧪 Run Diagnostics</button>
       </div>
-      <div class="setting-item">
-        <label class="setting-label">Method</label>
-        <select class="setting-input" id="methodSelect">
-          <option value="ping" selected>Ping Only</option>
-          <option value="refresh">Full Refresh</option>
-        </select>
+
+      <div class="settings-section">
+        <h3 class="section-title">General</h3>
+        <div class="settings-grid">
+          <div class="setting-item" title="How often to perform the keep-alive action">
+            <label class="setting-label">Refresh (min) ℹ️</label>
+            <input type="number" class="setting-input" id="intervalInput" min="1" max="60" value="3">
+          </div>
+          <div class="setting-item" title="Ping: Sends signal without reload. Refresh: Reloads page.">
+            <label class="setting-label">Method ℹ️</label>
+            <select class="setting-input" id="methodSelect">
+              <option value="ping">Ping Only</option>
+              <option value="refresh">Full Refresh</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row" title="Pause extension when on battery power">
+          <label class="setting-label">Battery Saver Mode ℹ️</label>
+          <label class="switch">
+            <input type="checkbox" id="batterySaverToggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">Schedule</h3>
+        <div class="setting-row">
+          <label class="setting-label">Active Hours Only</label>
+          <label class="switch">
+            <input type="checkbox" id="activeHoursToggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="settings-grid" id="activeHoursInputs" style="display: none;">
+          <div class="setting-item">
+            <label class="setting-label">Start</label>
+            <input type="time" class="setting-input" id="startTime" value="09:00">
+          </div>
+          <div class="setting-item">
+            <label class="setting-label">End</label>
+            <input type="time" class="setting-input" id="endTime" value="17:00">
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">Domain Rules</h3>
+        <div class="setting-item">
+          <label class="setting-label">Mode</label>
+          <select class="setting-input" id="domainModeSelect">
+            <option value="none">Run on All Sites (Default)</option>
+            <option value="whitelist">Whitelist Only (Run ONLY on these)</option>
+            <option value="blacklist">Blacklist (Run on all EXCEPT these)</option>
+          </select>
+        </div>
+        <div class="setting-item" id="domainListContainer" style="display: none;">
+          <label class="setting-label">Domains (one per line)</label>
+          <textarea class="setting-input" id="domainListInput" rows="3"
+            placeholder="example.com&#10;mysite.org"></textarea>
+        </div>
       </div>
     </div>
 
-    <div class="dashboard">
-      <div class="dashboard-header">
-        <span class="dashboard-title">Active Tabs</span>
-        <span class="tab-count" id="tabCount">0 monitored</span>
+    <!-- Activity Log Tab -->
+    <div id="activity-tab" class="tab-content">
+      <div class="activity-log" id="activityLogList">
+        <!-- Log entries injected here -->
+        <div class="empty-state">No recent activity</div>
       </div>
-      <div class="tab-list" id="tabList">
-        <!-- Tabs will be injected here -->
-      </div>
-      <button class="test-btn" id="testBtn">🧪 Run Diagnostics</button>
     </div>
+
+    <div class="scroll-indicator" id="scrollIndicator">⬇️</div>
+
   </div>
   <script src="popup.js"></script>
 </body>
