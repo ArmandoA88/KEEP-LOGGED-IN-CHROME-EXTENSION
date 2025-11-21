@@ -117,12 +117,12 @@ function updateIcon() {
 
   const iconPath = isActive ? {
     "16": "icons/icon-active.png",
-    "48": "icons/icon-active.png",
-    "128": "icons/icon-active.png"
+    "48": "icons/icon-active-48.png",
+    "128": "icons/icon-active-128.png"
   } : {
     "16": "icons/icon-inactive.png",
-    "48": "icons/icon-inactive.png",
-    "128": "icons/icon-inactive.png"
+    "48": "icons/icon-inactive-48.png",
+    "128": "icons/icon-inactive-128.png"
   };
 
   chrome.action.setIcon({ path: iconPath }).catch((err) => {

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Generate Thunderbolt Icons</title>
+</head>
+
+<body>
+    <h1>Generating Thunderbolt Icons...</h1>
+    <p>Icons will download automatically. Save them to the icons/ folder.</p>
+    <div id="status"></div>
+
+    <script>
+        const status = document.getElementById('status');
+
+        // Create thunderbolt path for different sizes
+        function createThunderboltIcon(size, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Clear background (transparent)
+            ctx.clearRect(0, 0, size, size);
+
+            // Scale based on size
+            const scale = size / 16;
+
+            // Draw thunderbolt
+            ctx.fillStyle = color;
+            ctx.beginPath();
+
+            // Thunderbolt shape (optimized for small sizes)
+            const centerX = size / 2;
+            const centerY = size / 2;
+
+            ctx.moveTo(centerX + 2 * scale, centerY - 5 * scale);
+            ctx.lineTo(centerX - 1 * scale, centerY);
+            ctx.lineTo(centerX + 1 * scale, centerY);
+            ctx.lineTo(centerX - 2 * scale, centerY + 5 * scale);
+            ctx.lineTo(centerX + 1 * scale, centerY + 1 * scale);
+            ctx.lineTo(centerX - 1 * scale, centerY + 1 * scale);
+            ctx.closePath();
+            ctx.fill();
+
+            return canvas;
+        }
+
+        // Download canvas as PNG
+        function downloadCanvas(canvas, filename) {
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    setTimeout(resolve, 300);
+                }, 'image/png');
+            });
+        }
+
+        // Generate all icons
+        async function generateIcons() {
+            const sizes = [16, 48, 128];
+            const colors = {
+                'active': '#10b981',    // Green
+                'inactive': '#6b7280'   // Gray
+            };
+
+            for (const [state, color] of Object.entries(colors)) {
+                for (const size of sizes) {
+                    const canvas = createThunderboltIcon(size, color);
+                    const filename = `icon-${state}-${size}.png`;
+
+                    status.innerHTML += `<p>✓ Generated ${filename}</p>`;
+                    await downloadCanvas(canvas, filename);
+                }
+            }
+
+            status.innerHTML += '<p><strong>✅ All icons generated!</strong></p>';
+            status.innerHTML += '<p>Now rename the files:</p>';
+            status.innerHTML += '<ul>';
+            status.innerHTML += '<li>icon-active-16.png → icon-active.png (use the 16px version)</li>';
+            status.innerHTML += '<li>icon-inactive-16.png → icon-inactive.png (use the 16px version)</li>';
+            status.innerHTML += '<li>Or use any size you prefer for better quality</li>';
+            status.innerHTML += '</ul>';
+        }
+
+        // Start generation after a short delay
+        setTimeout(generateIcons, 500);
+    </script>
+</body>
+
+</html>

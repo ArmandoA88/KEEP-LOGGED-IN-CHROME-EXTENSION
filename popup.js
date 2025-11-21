@@ -306,6 +306,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check initially and on tab change
   setTimeout(checkScroll, 100);
 
+  // Add click handler to scroll indicator
+  scrollIndicator.addEventListener('click', () => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  });
+
   // Analytics
-  chrome.runtime.sendMessage({ action: 'popupOpened' });
+  chrome.runtime.sendMessage({ action: 'popupOpened' }).catch(() => {
+    // Ignore errors if background script is not ready
+  });
 });

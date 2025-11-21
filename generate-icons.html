@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Generate Icons</title>
+</head>
+
+<body>
+    <h1>Generating Icons...</h1>
+    <canvas id="canvas" width="128" height="128"></canvas>
+
+    <script>
+        // Function to create a thunderbolt icon
+        function drawThunderbolt(ctx, size, color) {
+            ctx.clearRect(0, 0, size, size);
+            ctx.fillStyle = color;
+
+            // Scale factor
+            const scale = size / 128;
+
+            // Draw thunderbolt shape
+            ctx.beginPath();
+            ctx.moveTo(70 * scale, 20 * scale);
+            ctx.lineTo(50 * scale, 60 * scale);
+            ctx.lineTo(65 * scale, 60 * scale);
+            ctx.lineTo(45 * scale, 108 * scale);
+            ctx.lineTo(75 * scale, 68 * scale);
+            ctx.lineTo(60 * scale, 68 * scale);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Function to save canvas as PNG
+        function saveIcon(canvas, filename) {
+            canvas.toBlob(function (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Generate icons
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const sizes = [16, 48, 128];
+        const states = [
+            { name: 'active', color: '#10b981' },  // Green
+            { name: 'inactive', color: '#6b7280' }  // Gray
+        ];
+
+        let index = 0;
+        const combinations = [];
+
+        states.forEach(state => {
+            sizes.forEach(size => {
+                combinations.push({ state, size });
+            });
+        });
+
+        function generateNext() {
+            if (index >= combinations.length) {
+                document.body.innerHTML += '<p>All icons generated! Check your downloads.</p>';
+                return;
+            }
+
+            const { state, size } = combinations[index];
+            canvas.width = size;
+            canvas.height = size;
+
+            drawThunderbolt(ctx, size, state.color);
+
+            const filename = `icon${size}-${state.name}.png`;
+            saveIcon(canvas, filename);
+
+            document.body.innerHTML += `<p>Generated: ${filename}</p>`;
+
+            index++;
+            setTimeout(generateNext, 500);
+        }
+
+        setTimeout(generateNext, 1000);
+    </script>
+</body>
+
+</html>

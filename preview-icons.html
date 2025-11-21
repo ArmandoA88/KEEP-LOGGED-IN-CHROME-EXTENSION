@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Icon Preview - Gradient Design</title>
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            padding: 40px;
+            background: #0f172a;
+            color: white;
+            margin: 0;
+        }
+
+        h1 {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .preview {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .preview:hover {
+            transform: translateY(-5px);
+        }
+
+        .preview.active:hover {
+            box-shadow: 0 10px 30px rgba(129, 140, 248, 0.3);
+        }
+
+        .preview.inactive:hover {
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+        }
+
+        .icon-display {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: inline-block;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        h3 {
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+
+        .preview.active h3 {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .preview.inactive h3 {
+            color: #ef4444;
+        }
+
+        .size-label {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status.active {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            color: white;
+        }
+
+        .status.inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .color-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .color-info h3 {
+            color: #94a3b8;
+            font-size: 1em;
+            margin-top: 0;
+        }
+
+        .color-swatch {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>⚡ Gradient Thunderbolt Icons</h1>
+        <p style="color: #94a3b8; font-size: 1.1em;">Matching the popup menu gradient • Centered • Thinner ring</p>
+
+        <div class="preview-grid">
+            <div class="preview active">
+                <h3>Active - 16x16</h3>
+                <div class="icon-display">
+                    <canvas id="active16" width="16" height="16"></canvas>
+                </div>
+                <div class="status active">ON</div>
+                <p class="size-label">Toolbar size (actual)</p>
+            </div>
+
+            <div class="preview active">
+                <h3>Active - 48x48</h3>
+                <div class="icon-display">
+                    <canvas id="active48" width="48" height="48"></canvas>
+                </div>
+                <div class="status active">ON</div>
+                <p class="size-label">Medium resolution</p>
+            </div>
+
+            <div class="preview active">
+                <h3>Active - 128x128</h3>
+                <div class="icon-display">
+                    <canvas id="active128" width="128" height="128"></canvas>
+                </div>
+                <div class="status active">ON</div>
+                <p class="size-label">High resolution</p>
+            </div>
+
+            <div class="preview inactive">
+                <h3>Inactive - 16x16</h3>
+                <div class="icon-display">
+                    <canvas id="inactive16" width="16" height="16"></canvas>
+                </div>
+                <div class="status inactive">OFF</div>
+                <p class="size-label">Toolbar size (actual)</p>
+            </div>
+
+            <div class="preview inactive">
+                <h3>Inactive - 48x48</h3>
+                <div class="icon-display">
+                    <canvas id="inactive48" width="48" height="48"></canvas>
+                </div>
+                <div class="status inactive">OFF</div>
+                <p class="size-label">Medium resolution</p>
+            </div>
+
+            <div class="preview inactive">
+                <h3>Inactive - 128x128</h3>
+                <div class="icon-display">
+                    <canvas id="inactive128" width="128" height="128"></canvas>
+                </div>
+                <div class="status inactive">OFF</div>
+                <p class="size-label">High resolution</p>
+            </div>
+        </div>
+
+        <div class="color-info">
+            <h3>Color Palette</h3>
+            <p><span class="color-swatch" style="background: linear-gradient(to right, #818cf8, #c084fc);"></span>
+                Active: Purple to Pink Gradient (#818cf8 → #c084fc)</p>
+            <p><span class="color-swatch" style="background: #ef4444;"></span> Inactive: Red (#ef4444)</p>
+            <p><span class="color-swatch" style="background: #0f172a;"></span> Background: Dark Blue (#0f172a)</p>
+        </div>
+    </div>
+
+    <script>
+        function drawCenteredThunderbolt(canvasId, size, isGradient) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, size, size);
+
+            // Scale factor
+            const s = size / 16;
+
+            // Draw dark background circle
+            ctx.fillStyle = 'rgb(15, 23, 42)';
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Create gradient or solid color
+            let strokeStyle, fillStyle;
+            if (isGradient) {
+                const gradient = ctx.createLinearGradient(0, 0, size, 0);
+                gradient.addColorStop(0, 'rgb(129, 140, 248)');  // #818cf8
+                gradient.addColorStop(1, 'rgb(192, 132, 252)');  // #c084fc
+                strokeStyle = gradient;
+                fillStyle = gradient;
+            } else {
+                strokeStyle = 'rgb(239, 68, 68)';  // #ef4444
+                fillStyle = 'rgb(239, 68, 68)';
+            }
+
+            // Draw thinner circle border (half thickness)
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = 1.5 * s;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, 6.8 * s, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw centered thunderbolt
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            ctx.moveTo(10 * s, 3.5 * s);   // Top point
+            ctx.lineTo(5 * s, 8 * s);      // Left middle
+            ctx.lineTo(7.5 * s, 8 * s);    // Center bar left
+            ctx.lineTo(4 * s, 12.5 * s);   // Bottom point
+            ctx.lineTo(9 * s, 8.5 * s);    // Center bar right
+            ctx.lineTo(6.5 * s, 8.5 * s);  // Right middle
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Draw all versions
+        drawCenteredThunderbolt('active16', 16, true);      // Gradient
+        drawCenteredThunderbolt('active48', 48, true);      // Gradient
+        drawCenteredThunderbolt('active128', 128, true);    // Gradient
+        drawCenteredThunderbolt('inactive16', 16, false);   // Red
+        drawCenteredThunderbolt('inactive48', 48, false);   // Red
+        drawCenteredThunderbolt('inactive128', 128, false); // Red
+    </script>
+</body>
+
+</html>
