@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Keep Logged In",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Keeps all tabs active to prevent timeouts and maintain login sessions",
   "permissions": [
     "tabs",
     "activeTab",
     "storage",
     "background",
-    "notifications",
     "alarms",
     "offscreen"
   ],
